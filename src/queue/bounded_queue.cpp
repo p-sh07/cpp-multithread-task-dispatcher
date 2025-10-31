@@ -1,7 +1,38 @@
 #include "queue/bounded_queue.hpp"
 
 namespace dispatcher::queue {
+BoundedQueue::BoundedQueue(int capacity)
+    : capacity_(capacity)
+    , slots_(capacity)
+{}
 
-// здесь ваш код
+//Returns true of pushed successfully, otherwise false - better than exception
+void BoundedQueue::push(std::function<void()> task) {
+    if (slots_.try_acquire()) {
+        tasks_.push(task);
+    }
+    throw std::runtime_error("Queue is full");
+}
 
+std::optional<std::function<void()>> BoundedQueue::try_pop() {
+    if (tasks_.empty()) {
+        return std::nullopt;
+    }
+    auto top_task = std::move(tasks_.front());
+    tasks_.pop();
+    slots_.release(); //free capacity slot
+
+    return top_task;
+}
+
+bool BoundedQueue::not_full() const {
+    return tasks_.size() < capacity_;
+}
+
+bool BoundedQueue::empty() const {
+    return tasks_.empty();
+}
+
+BoundedQueue::~BoundedQueue() {}
 } // namespace dispatcher::queue
+

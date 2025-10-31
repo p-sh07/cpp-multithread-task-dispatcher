@@ -9,12 +9,12 @@
 namespace dispatcher {
 
 class TaskDispatcher {
-    // здесь ваш код
 public:
-    // TaskDispatcher(size_t thread_count, ?);
+    TaskDispatcher(size_t thread_count);
+
+    ~TaskDispatcher();
 
     void schedule(TaskPriority priority, std::function<void()> task);
-    ~TaskDispatcher();
 };
 
 }  // namespace dispatcher

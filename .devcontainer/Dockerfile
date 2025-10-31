@@ -1,16 +1,18 @@
 FROM ubuntu@sha256:79efa276fdefa2ee3911db29b0608f8c0561c347ec3f4d4139980d43b168d991
 
 # Update the package database
-RUN apt-get update
+RUN apt clean
+RUN apt update
+RUN apt upgrade -y
 
 # Install common tools
-RUN apt-get install -y python3-minimal python3-pip pipx git less vim sudo cmake make g++-15 clang-format clangd-20
+RUN apt install -y python3-minimal python3-pip pipx git less vim sudo cmake make g++-15 clang-format clangd-20 --fix-missing
 
 # Install additional tools and libraries
-RUN apt-get install -y libgtest-dev
+RUN apt install -y libgtest-dev
 
 # Cleanup
-RUN apt-get autoremove -y \
+RUN apt autoremove -y \
     && apt autoclean \
     && rm -rf /var/lib/apt/lists/* \
     && rm -rf /var/cache/apt/* \

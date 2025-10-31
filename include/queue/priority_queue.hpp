@@ -1,4 +1,6 @@
 #pragma once
+#include <algorithm>
+
 #include "queue/bounded_queue.hpp"
 #include "queue/unbounded_queue.hpp"
 #include "types.hpp"
@@ -9,24 +11,36 @@
 #include <memory>
 #include <mutex>
 #include <optional>
+#include <ranges>
 #include <stdexcept>
-#include <unordered_map>
 
 namespace dispatcher::queue {
+// static constexpr std::map<TaskPriority, QueueOptions> PriorityOptionsMap = {
+//     {TaskPriority::High,   {true, 10}},
+//     {TaskPriority::Normal, {false, std::nullopt}}
+// };
+using PriorityOptionsMap = std::map<TaskPriority, QueueOptions>;
 
 class PriorityQueue {
-    // здесь ваш код
 public:
-    // explicit PriorityQueue(?);
-
+    explicit PriorityQueue(const PriorityOptionsMap& options_map);
     void push(TaskPriority priority, std::function<void()> task);
-    // block on pop until shutdown is called
-    // after that return std::nullopt on empty queue
-    std::optional<std::function<void()>> pop();
 
+    // block on pop until shutdown is called after that return std::nullopt on empty queue
+    std::optional<std::function<void()>> pop();
     void shutdown();
 
     ~PriorityQueue();
+private:
+    std::mutex queue_mutex_;
+    std::condition_variable not_empty_;    //at least one task in either queue
+    std::condition_variable hpq_not_full_; //high-priority queue is not full
+    std::atomic<bool> shutdown_active_ = false;
+
+    std::map<TaskPriority, std::unique_ptr<IQueue>> priority_queues_;
+
+    bool Empty();
+    std::optional<std::function<void()>> GetNextTask(bool lock_mutex = true) const;
 };
 
 }  // namespace dispatcher::queue
