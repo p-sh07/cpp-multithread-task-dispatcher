@@ -127,11 +127,9 @@ TEST(TaskDispatcherTest, ConcurrentScheduleFromMultipleThreads) {
 }
 
 //TODO: Test suite with combinations of threads / tasks / configs
-
 TEST(TaskDispatcherTest, OneThreadCorrectOrder) {
     constexpr int tasks_num = 10;
 
-    //TODO: This test fails ?1/!?1
     std::vector<std::pair<int, TaskPriority>> executed_order(tasks_num);
     std::atomic<int> exec_order {0};
     std::mutex ord_mtx;
@@ -141,8 +139,8 @@ TEST(TaskDispatcherTest, OneThreadCorrectOrder) {
             for (int j = 0; j < tasks_num / 2; ++j) {
                 int task_id = i * (tasks_num / 2) + j;
                 auto priority = (i == 0) ? TaskPriority::High : TaskPriority::Normal;
-                std::println("Sheduling:");
-                std::println("#{}, {}", task_id, priority == TaskPriority::High ? "high" : "norm");
+                // std::println("Sheduling:");
+                // std::println("#{}, {}", task_id, priority == TaskPriority::High ? "high" : "norm");
                 dispatcher.schedule(priority,
                     [&]() {
                         auto lk = std::lock_guard(ord_mtx);
@@ -154,18 +152,20 @@ TEST(TaskDispatcherTest, OneThreadCorrectOrder) {
         }
     } //~destroyed, so all tasks should be finished
 
-    std::println("Completed:");
-    for(const auto& [order_completed, pr] : executed_order) {
-        std::println("#{}, {}", order_completed, pr == TaskPriority::High ? "high" : "norm");
-    }
+    // std::println("Completed:");
+    // for(const auto& [order_completed, pr] : executed_order) {
+        // std::println("#{}, {}", order_completed, pr == TaskPriority::High ? "high" : "norm");
+    // }
 
     int count = 0;
     for (const auto& [order_completed, pr] : executed_order) {
+        //TODO: sends 5 high 5 norm, outputs random ratio ....
         if(count < tasks_num / 2) {
             EXPECT_EQ(pr, TaskPriority::High);
         } else {
             EXPECT_EQ(pr, TaskPriority::Normal);
         }
+        //TODO: why is the order wrong in 1-thread scenario?? Even with exec mutex
         EXPECT_EQ(order_completed, count);
         ++count;
     }
