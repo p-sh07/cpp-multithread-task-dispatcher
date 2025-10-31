@@ -11,7 +11,7 @@ using queue::PriorityQueue;
 
 class ThreadPool {
 public:
-    explicit ThreadPool(std::shared_ptr<PriorityQueue> queue, size_t num_threads);
+    explicit ThreadPool(size_t num_threads, std::shared_ptr<PriorityQueue> queue);
 
     ~ThreadPool();
 

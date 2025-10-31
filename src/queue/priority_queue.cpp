@@ -1,4 +1,5 @@
 #include "queue/priority_queue.hpp"
+#include <print>
 
 namespace dispatcher::queue {
 PriorityQueue::PriorityQueue(const PriorityOptionsMap& options_map) {
@@ -9,7 +10,7 @@ PriorityQueue::PriorityQueue(const PriorityOptionsMap& options_map) {
         } else {
             q_ptr = std::make_unique<UnboundedQueue>();
         }
-        auto lk = std::unique_lock(queue_mutex_);
+        auto lk = std::lock_guard(queue_mutex_);
         priority_queues_.try_emplace(priority, std::move(q_ptr)); //push under lock
     }
 }
@@ -21,7 +22,7 @@ void PriorityQueue::push(TaskPriority priority, std::function<void()> task) {
     //For high priority task the queue is bounded, so have to wait for not_full
     if(priority == TaskPriority::High) {
         hpq_not_full_.wait(lk, [this, &queue] {
-            return !queue->not_full() || shutdown_active_;
+            return queue->not_full() || shutdown_active_;
         });
     }
 
@@ -29,7 +30,6 @@ void PriorityQueue::push(TaskPriority priority, std::function<void()> task) {
     if(shutdown_active_) {
         return;
     }
-
     queue->push(std::move(task));
     not_empty_.notify_one(); //wake sleeping thread??
 }
@@ -39,7 +39,7 @@ std::optional<std::function<void()>> PriorityQueue::pop() {
 
     //wait until at least one of the qs is not empty
     not_empty_.wait(lk, [this] {
-        return !Empty() || shutdown_active_;
+        return !empty() || shutdown_active_;
     });
 
     //Return HP task if not empty
@@ -59,13 +59,9 @@ void PriorityQueue::shutdown() {
     hpq_not_full_.notify_all();
 }
 
-PriorityQueue::~PriorityQueue() {
+PriorityQueue::~PriorityQueue() {}
 
-}
-
-
-bool PriorityQueue::Empty() {
-    auto lk = std::unique_lock(queue_mutex_);
+bool PriorityQueue::empty() {
     return std::ranges::all_of(priority_queues_ | vw::values, &IQueue::empty);
 }
 } // namespace dispatcher::queue

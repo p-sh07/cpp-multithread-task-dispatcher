@@ -21,9 +21,12 @@ public:
     ~BoundedQueue() override;
 
 private:
+    std::mutex mtx_;
     const int capacity_;
     std::queue<std::function<void()>> tasks_;
-    std::counting_semaphore<least_max_capacity_> slots_;
+
+    //TODO: Is this better, how to use with c_var?
+    //std::counting_semaphore<least_max_capacity_> slots_;
 
 
 };

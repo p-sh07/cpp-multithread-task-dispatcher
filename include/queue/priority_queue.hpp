@@ -15,10 +15,7 @@
 #include <stdexcept>
 
 namespace dispatcher::queue {
-// static constexpr std::map<TaskPriority, QueueOptions> PriorityOptionsMap = {
-//     {TaskPriority::High,   {true, 10}},
-//     {TaskPriority::Normal, {false, std::nullopt}}
-// };
+
 using PriorityOptionsMap = std::map<TaskPriority, QueueOptions>;
 
 class PriorityQueue {
@@ -28,6 +25,8 @@ public:
 
     // block on pop until shutdown is called after that return std::nullopt on empty queue
     std::optional<std::function<void()>> pop();
+
+    bool empty();
     void shutdown();
 
     ~PriorityQueue();
@@ -38,9 +37,6 @@ private:
     std::atomic<bool> shutdown_active_ = false;
 
     std::map<TaskPriority, std::unique_ptr<IQueue>> priority_queues_;
-
-    bool Empty();
-    std::optional<std::function<void()>> GetNextTask(bool lock_mutex = true) const;
 };
 
 }  // namespace dispatcher::queue

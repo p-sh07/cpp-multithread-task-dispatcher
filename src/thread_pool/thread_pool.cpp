@@ -2,9 +2,9 @@
 
 namespace dispatcher::thread_pool {
 
-// здесь ваш код
-
-ThreadPool::ThreadPool(std::shared_ptr<PriorityQueue> queue, size_t num_threads) {
+ThreadPool::ThreadPool(size_t num_threads, std::shared_ptr<PriorityQueue> queue)
+    : task_queue_(std::move(queue))
+{
     workers_.reserve(num_threads);
     generate_n(
         std::back_inserter(workers_),

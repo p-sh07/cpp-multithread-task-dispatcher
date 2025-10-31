@@ -1,6 +1,9 @@
 #pragma once
+#include <queue>
+
 #include "queue/queue.hpp"
-#include <stack>
+#include <queue>
+#include <mutex>
 
 namespace dispatcher::queue {
 
@@ -16,7 +19,8 @@ public:
     ~UnboundedQueue() override;;
 
 private:
-    std::stack<std::function<void()>> tasks_;
+    std::mutex mtx_;
+    std::queue<std::function<void()>> tasks_;
 };
 
 }  // namespace dispatcher::queue
