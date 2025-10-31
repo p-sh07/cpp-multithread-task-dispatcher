@@ -16,7 +16,7 @@ public:
     ~ThreadPool();
 
 private:
-    void Worker() const;
+    void Run() const;
 
     std::shared_ptr<PriorityQueue> task_queue_;
     std::vector<std::jthread> workers_;

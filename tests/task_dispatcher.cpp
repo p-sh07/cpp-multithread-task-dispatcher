@@ -2,9 +2,7 @@
 
 #include "task_dispatcher.hpp"
 
-using dispatcher::TaskDispatcher;
-using dispatcher::TaskPriority;
-
+namespace dispatcher {
 static constexpr std::chrono::microseconds TEST_TIMEOUT {10000};
 static constexpr int TASK_COUNT = 50;
 
@@ -59,8 +57,7 @@ TEST(TaskDispatcherTest, ScheduleHighAndNormalPriority) {
 TEST(TaskDispatcherTest, ScheduleMultipleTasks) {
     TaskDispatcher dispatcher(4);
 
-
-    std::vector executed(TASK_COUNT, false);
+    std::vector<bool> executed(TASK_COUNT, false);
 
     for (int i = 0; i < TASK_COUNT; ++i) {
         dispatcher.schedule(
@@ -71,7 +68,7 @@ TEST(TaskDispatcherTest, ScheduleMultipleTasks) {
 
     auto start = std::chrono::steady_clock::now();
     while (std::chrono::steady_clock::now() - start < TEST_TIMEOUT) {
-        if (std::all_of(executed.begin(), executed.end(), [](bool b) { return b; })) {
+        if (rg::none_of(executed, std::logical_not())) { //none of are false - avoid lambda or custom func.
             break;
         }
         std::this_thread::sleep_for(std::chrono::milliseconds(10));
@@ -102,7 +99,7 @@ TEST(TaskDispatcherTest, ScheduleToFullHighPriorityQueue) {
     EXPECT_TRUE(firstExecuted);
 }
 
-TEST(TaskDispatcherTest, DestructorCompletesCleanly) {
+TEST(TaskDispatcherTest, DestructorNoThrow) {
     {
         TaskDispatcher dispatcher(2);
 
@@ -113,13 +110,14 @@ TEST(TaskDispatcherTest, DestructorCompletesCleanly) {
         }
     } // ~TaskDispatcher
 
+    //Destructor no-throw, finished successfully
     EXPECT_TRUE(true);
 }
 
 TEST(TaskDispatcherTest, ConcurrentScheduleFromMultipleThreads) {
     TaskDispatcher dispatcher(4);
-    constexpr int kTotalTasks = 100;
-    std::vector<bool> executed(kTotalTasks, false);
+    constexpr int TOTAL_TASKS = 100;
+    std::vector<bool> executed(TOTAL_TASKS, false);
 
     std::vector<std::thread> senders;
 
@@ -150,3 +148,7 @@ TEST(TaskDispatcherTest, ConcurrentScheduleFromMultipleThreads) {
         EXPECT_TRUE(wasExecuted) << "Task not executed in concurrent test";
     }
 }
+
+//TODO: Test suite with combinations of threads / tasks / configs
+
+}//nnamespace dispatchee

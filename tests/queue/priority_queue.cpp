@@ -8,16 +8,13 @@
 #include <vector>
 #include <chrono>
 
-using namespace dispatcher::queue;
-using dispatcher::TaskPriority;
-
-
+namespace dispatcher::queue {
 constexpr std::chrono::seconds TIMEOUT{10};
 constexpr int HIGH_PRIORITY_CAP = 3;
 
 PriorityOptionsMap makeTestConfig() {
     return {
-        {TaskPriority::High, {true, HIGH_PRIORITY_CAP}}, {TaskPriority::Normal, {false, std::nullopt}}
+            {TaskPriority::High, {true, HIGH_PRIORITY_CAP}}, {TaskPriority::Normal, {false, std::nullopt}}
     };
 }
 
@@ -53,12 +50,11 @@ TEST(PriorityQueueTest, PushNormalPriorityTask) {
 TEST(PriorityQueueTest, PopPrefersHighPriority) {
     PriorityQueue queue(makeTestConfig());
 
-    queue.push(TaskPriority::Normal, [] { std::cout << "Normal task\n"; });
-    queue.push(TaskPriority::High, [] { std::cout << "High task\n"; });
+    queue.push(TaskPriority::Normal, [] { });
+    queue.push(TaskPriority::High, [] { });
 
     auto task = queue.pop();
     ASSERT_TRUE(task.has_value());
-    //TODO: check that HP task is first
 }
 
 TEST(PriorityQueueTest, PopFromEmptyBlocksUntilTaskArrives) {
@@ -167,7 +163,7 @@ TEST(PriorityQueueTest, ConcurrentPushAndPop) {
                         (i == 0) ? TaskPriority::High : TaskPriority::Normal,
                         [&] {
                             ++completed;
-                            std::print("[{}] -> completing task [{}]\n", std::this_thread::get_id(), completed.load());
+                            //std::print("[{}] -> completing task [{}]\n", std::this_thread::get_id(), completed.load());
                         }
                     );
                 }
@@ -207,6 +203,7 @@ TEST(PriorityQueueTest, ShutdownFromMultipleThreads) {
 
     auto result = queue.pop();
     EXPECT_FALSE(result.has_value());
+}
 }
 
 /**mt test 2
@@ -300,7 +297,7 @@ TEST(PriorityQueueTest, ConcurrentPushAndPop) {
 }
 }*/
 
-/* PQ code with prints:
+/* PQ code with prints: - in case of further debug
  * #include "queue/priority_queue.hpp"
 #include <print>
 

@@ -76,11 +76,17 @@ TEST(UnboundedQueueTest, FIFOSemantics) {
     EXPECT_EQ(executionOrder[2], 3);
 }
 
-TEST(UnboundedQueueTest, NotFullAlwaysTrue) {
+TEST(UnboundedQueueTest, AlwaysNotFull) {
     UnboundedQueue queue;
 
+    EXPECT_TRUE(queue.not_full());
+
     queue.push([] {});
-    queue.push([] {});
+    EXPECT_TRUE(queue.not_full());
+
+    for(size_t i = 0; i < 10000; ++i) {
+        queue.push([] {});
+    }
 
     EXPECT_TRUE(queue.not_full());
 }
