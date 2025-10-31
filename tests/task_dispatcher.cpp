@@ -4,34 +4,10 @@
 
 namespace dispatcher {
 static constexpr std::chrono::microseconds TEST_TIMEOUT {10000};
-static constexpr int TASK_COUNT = 50;
+static constexpr int TASK_COUNT = 500;
 
-TEST(TaskDispatcherTest, ScheduleSingleHighPriorityTask) {
-    TaskDispatcher dispatcher(std::thread::hardware_concurrency());
-
-    bool taskExecuted = false;
-    dispatcher.schedule(TaskPriority::High, [&taskExecuted]() {
-        taskExecuted = true;
-    });
-
-    std::this_thread::sleep_for(std::chrono::milliseconds(100));
-
-    EXPECT_TRUE(taskExecuted);
-}
-
-TEST(TaskDispatcherTest, ScheduleSingleNormalPriorityTask) {
-    TaskDispatcher dispatcher(std::thread::hardware_concurrency());
-
-    bool taskExecuted = false;
-    dispatcher.schedule(TaskPriority::Normal, [&taskExecuted]() {
-        taskExecuted = true;
-    });
-
-    std::this_thread::sleep_for(std::chrono::milliseconds(100));
-    EXPECT_TRUE(taskExecuted);
-}
-
-TEST(TaskDispatcherTest, ScheduleHighAndNormalPriority) {
+//Use mutex to ensure Normal task doesnt randomly start first in a different thread
+TEST(TaskDispatcherTest, HighAndNormalPriorityOrder) {
     TaskDispatcher dispatcher(std::thread::hardware_concurrency());
     std::vector<int> executionOrder;
     std::mutex orderMutex;
@@ -111,6 +87,7 @@ TEST(TaskDispatcherTest, DestructorNoThrow) {
     } // ~TaskDispatcher
 
     //Destructor no-throw, finished successfully
+    //TODO: check threads/etc?
     EXPECT_TRUE(true);
 }
 
@@ -150,5 +127,49 @@ TEST(TaskDispatcherTest, ConcurrentScheduleFromMultipleThreads) {
 }
 
 //TODO: Test suite with combinations of threads / tasks / configs
+
+TEST(TaskDispatcherTest, OneThreadCorrectOrder) {
+    constexpr int tasks_num = 10;
+
+    //TODO: This test fails ?1/!?1
+    std::vector<std::pair<int, TaskPriority>> executed_order(tasks_num);
+    std::atomic<int> exec_order {0};
+    std::mutex ord_mtx;
+    {
+        TaskDispatcher dispatcher(1);
+        for(int i = 0; i < 2; ++i) {
+            for (int j = 0; j < tasks_num / 2; ++j) {
+                int task_id = i * (tasks_num / 2) + j;
+                auto priority = (i == 0) ? TaskPriority::High : TaskPriority::Normal;
+                std::println("Sheduling:");
+                std::println("#{}, {}", task_id, priority == TaskPriority::High ? "high" : "norm");
+                dispatcher.schedule(priority,
+                    [&]() {
+                        auto lk = std::lock_guard(ord_mtx);
+                        executed_order[task_id] = std::make_pair(exec_order.load(), priority);
+                        ++exec_order;
+                    }
+                );
+            }
+        }
+    } //~destroyed, so all tasks should be finished
+
+    std::println("Completed:");
+    for(const auto& [order_completed, pr] : executed_order) {
+        std::println("#{}, {}", order_completed, pr == TaskPriority::High ? "high" : "norm");
+    }
+
+    int count = 0;
+    for (const auto& [order_completed, pr] : executed_order) {
+        if(count < tasks_num / 2) {
+            EXPECT_EQ(pr, TaskPriority::High);
+        } else {
+            EXPECT_EQ(pr, TaskPriority::Normal);
+        }
+        EXPECT_EQ(order_completed, count);
+        ++count;
+    }
+    EXPECT_EQ(count, tasks_num);
+}
 
 }//nnamespace dispatchee
