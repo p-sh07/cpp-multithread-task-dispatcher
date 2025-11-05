@@ -3,9 +3,10 @@ FROM ubuntu@sha256:79efa276fdefa2ee3911db29b0608f8c0561c347ec3f4d4139980d43b168d
 # Update the package database
 RUN apt clean
 RUN apt update
+RUN apt upgrade -y
 
 # Install common tools
-RUN apt install -y python3-minimal python3-pip pipx git less vim sudo cmake make g++-15 clang-format clangd-20
+RUN apt install -y python3-minimal python3-pip pipx git less vim sudo cmake make g++-15 clang-format clangd-20 --fix-missing
 
 # Install additional tools and libraries
 RUN apt install -y libgtest-dev
