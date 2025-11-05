@@ -25,8 +25,7 @@ private:
     const int capacity_;
     std::queue<std::function<void()>> tasks_;
 
-    //TODO: Is this better, how to use with c_var?
-    //std::counting_semaphore<least_max_capacity_> slots_;
+    // std::counting_semaphore<least_max_capacity_> slots_;
 
 
 };

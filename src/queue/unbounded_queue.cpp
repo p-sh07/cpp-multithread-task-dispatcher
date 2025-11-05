@@ -12,10 +12,12 @@ namespace dispatcher::queue {
 UnboundedQueue::UnboundedQueue() {}
 
 void UnboundedQueue::push(std::function<void()> task) {
+    auto lk = std::lock_guard(mtx_);
     tasks_.push(task);
 }
 
 std::optional<std::function<void()>> UnboundedQueue::try_pop() {
+    auto lk = std::lock_guard(mtx_);
     if (tasks_.empty()) {
         return std::nullopt;
     }
